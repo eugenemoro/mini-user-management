@@ -35,6 +35,7 @@ exports.usersListGet = (req, res) => {
 exports.usersCreateGet = (req, res) => {
   res.render('createUser', {
     title: 'Create user',
+    user: req.body,
   });
 };
 
@@ -46,6 +47,7 @@ exports.usersCreatePost = [
       return res.status(400).render('createUser', {
         title: 'Create user',
         errors: errors.array(),
+        user: req.body,
       });
     }
     const { firstName, lastName, email, age, bio } = req.body;
