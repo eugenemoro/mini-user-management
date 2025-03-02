@@ -17,6 +17,12 @@ const validateUser = [
     .withMessage(`Last name ${alphaErr}`)
     .isLength({ min: 1, max: 10 })
     .withMessage(`Last name ${lengthErr}`),
+  body('email').trim().isEmail().withMessage('Email is required'),
+  body('age').trim().isNumeric().withMessage('Age must be number'),
+  body('bio')
+    .trim()
+    .isLength({ min: 0, max: 200 })
+    .withMessage('Bio cannot exceed 200 characters'),
 ];
 
 exports.usersListGet = (req, res) => {
@@ -42,16 +48,16 @@ exports.usersCreatePost = [
         errors: errors.array(),
       });
     }
-    const { firstName, lastName } = req.body;
-    usersStorage.addUser({ firstName, lastName });
+    const { firstName, lastName, email, age, bio } = req.body;
+    usersStorage.addUser({ firstName, lastName, email, age, bio });
     res.redirect('/');
   },
 ];
 
 exports.usersUpdateGet = (req, res) => {
   const user = usersStorage.getUser(req.params.id);
-  res.render("updateUser", {
-    title: "Update user",
+  res.render('updateUser', {
+    title: 'Update user',
     user: user,
   });
 };
@@ -62,19 +68,46 @@ exports.usersUpdatePost = [
     const user = usersStorage.getUser(req.params.id);
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).render("updateUser", {
-        title: "Update user",
+      return res.status(400).render('updateUser', {
+        title: 'Update user',
         user: user,
         errors: errors.array(),
       });
     }
-    const { firstName, lastName } = req.body;
-    usersStorage.updateUser(req.params.id, { firstName, lastName });
-    res.redirect("/");
-  }
+    const { firstName, lastName, email, age, bio } = req.body;
+    usersStorage.updateUser(req.params.id, {
+      firstName,
+      lastName,
+      email,
+      age,
+      bio,
+    });
+    res.redirect('/');
+  },
 ];
 
 exports.usersDeletePost = (req, res) => {
   usersStorage.deleteUser(req.params.id);
-  res.redirect("/");
+  res.redirect('/');
+};
+
+exports.usersSearchGet = (req, res) => {
+  const listOfUsers = usersStorage.getUsers();
+  const searchResult = {};
+  let searchResultId = 0;
+  const searchQuery = req.query.seek;
+  for (let i = 0; i < listOfUsers.length; i += 1) {
+    if (
+      new RegExp(searchQuery, 'i').test(listOfUsers[i].firstName) ||
+      new RegExp(searchQuery, 'i').test(listOfUsers[i].lastName) ||
+      new RegExp(searchQuery, 'i').test(listOfUsers[i].email)
+    ) {
+      searchResult[searchResultId] = listOfUsers[i];
+      searchResultId += 1;
+    }
+  }
+  res.render('search', {
+    title: 'Search results',
+    users: Object.values(searchResult),
+  });
 };
